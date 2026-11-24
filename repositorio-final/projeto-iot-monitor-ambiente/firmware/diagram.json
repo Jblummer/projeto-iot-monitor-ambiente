@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "author": "Projeto IoT ADS",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -105.3, "left": 158.7, "attrs": { "temperature": "26", "humidity": "55" } },
+    { "type": "wokwi-led", "id": "led1", "top": 25.2, "left": -111.4, "attrs": { "color": "blue" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 109.55, "left": -115.2, "attrs": { "value": "220" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [] ],
+    [ "dht1:GND", "esp:GND.2", "black", [] ],
+    [ "dht1:SDA", "esp:15", "green", [] ],
+    [ "esp:2", "r1:2", "blue", [] ],
+    [ "r1:1", "led1:A", "blue", [] ],
+    [ "led1:C", "esp:GND.1", "black", [] ]
+  ],
+  "dependencies": {}
+}

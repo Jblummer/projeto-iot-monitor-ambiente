@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Monitor de Ambiente IoT</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f2f4f7; margin: 0; padding: 20px; color: #222; }
+    h1 { text-align: center; }
+    .cards { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+    .card { background: white; border-radius: 12px; padding: 20px; min-width: 180px; text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+    .valor { font-size: 2.5em; font-weight: bold; }
+    .caixa { background: white; border-radius: 12px; padding: 20px; max-width: 900px; margin: 20px auto;
+             box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+    button { font-size: 1.1em; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; color: white; margin: 5px; }
+    .ligar { background: #2e7d32; } .desligar { background: #c62828; }
+    .on { color: #2e7d32; } .off { color: #c62828; }
+  </style>
+</head>
+<body>
+  <h1>🌡️ Monitor de Ambiente IoT</h1>
+
+  <div class="cards">
+    <div class="card">Temperatura<div class="valor" id="temp">--</div>°C</div>
+    <div class="card">Umidade<div class="valor" id="umid">--</div>%</div>
+    <div class="card">Ventilador<div class="valor" id="vent">--</div>
+      <button class="ligar" onclick="comando('ON')">Ligar</button>
+      <button class="desligar" onclick="comando('OFF')">Desligar</button>
+    </div>
+  </div>
+
+  <div class="caixa">
+    <canvas id="grafico"></canvas>
+    <p style="text-align:center;color:#666">Última atualização: <span id="hora">--</span></p>
+  </div>
+
+<script>
+  // Cria o gráfico vazio (duas linhas: temperatura e umidade)
+  const grafico = new Chart(document.getElementById("grafico"), {
+    type: "line",
+    data: { labels: [], datasets: [
+      { label: "Temperatura (°C)", data: [], borderColor: "#e53935", tension: 0.3 },
+      { label: "Umidade (%)",      data: [], borderColor: "#1e88e5", tension: 0.3 }
+    ]}
+  });
+
+  // Busca os dados no servidor e atualiza a tela
+  async function atualizar() {
+    const resp = await fetch("/api/leituras");
+    const dados = await resp.json();
+    const lista = dados.leituras;
+
+    const vent = document.getElementById("vent");
+    vent.textContent = dados.ventilador === "ON" ? "LIGADO" : "DESLIGADO";
+    vent.className = "valor " + (dados.ventilador === "ON" ? "on" : "off");
+
+    if (lista.length === 0) return;
+    const ultima = lista[lista.length - 1];
+    document.getElementById("temp").textContent = ultima.temp;
+    document.getElementById("umid").textContent = ultima.umid;
+    document.getElementById("hora").textContent = ultima.data_hora;
+
+    grafico.data.labels = lista.map(l => l.data_hora.slice(11)); // só a hora
+    grafico.data.datasets[0].data = lista.map(l => l.temp);
+    grafico.data.datasets[1].data = lista.map(l => l.umid);
+    grafico.update();
+  }
+
+  // Envia a ordem de ligar/desligar
+  async function comando(ordem) {
+    await fetch("/api/comando", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ comando: ordem })
+    });
+    atualizar();
+  }
+
+  atualizar();
+  setInterval(atualizar, 5000); // atualiza sozinho a cada 5 segundos
+</script>
+</body>
+</html>
